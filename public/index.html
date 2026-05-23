@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YouTube → After Effects</title>
+<style>
+*{ box-sizing:border-box; margin:0; padding:0; }
+body{
+  background:#0f0f0f;
+  color:white;
+  font-family:Arial;
+  padding:20px;
+  max-width:620px;
+  margin:0 auto;
+}
+h1{ font-size:22px; margin-bottom:4px; }
+.sub{ font-size:13px; color:#666; margin-bottom:18px; }
+
+input{
+  width:100%;
+  padding:14px 16px;
+  border:none;
+  border-radius:12px;
+  margin-top:10px;
+  font-size:15px;
+  background:#1e1e1e;
+  color:white;
+}
+input::placeholder{ color:#555; }
+
+#btn{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#ff0033;
+  color:white;
+  font-size:17px;
+  font-weight:bold;
+  cursor:pointer;
+  margin-top:12px;
+}
+#btn:disabled{ background:#444; cursor:not-allowed; }
+
+/* ── Cookies panel ── */
+.cookies-panel{
+  margin-top:14px;
+  background:#1a1a1a;
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid #2a2a2a;
+}
+.cookies-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 16px;
+  cursor:pointer;
+  user-select:none;
+  font-size:13px;
+  color:#888;
+}
+.cookies-header:hover{ color:#bbb; }
+.cookies-header .tag{
+  font-size:11px;
+  padding:2px 8px;
+  border-radius:99px;
+  font-weight:bold;
+}
+.tag.ok{ background:#00aa5533; color:#00cc66; }
+.tag.missing{ background:#ff330022; color:#ff4444; }
+.cookies-body{
+  display:none;
+  padding:0 16px 16px;
+}
+.cookies-body.open{ display:block; }
+.cookies-body p{
+  font-size:12px;
+  color:#666;
+  margin-bottom:8px;
+  line-height:1.6;
+}
+.cookies-body a{ color:#4a9eff; }
+textarea{
+  width:100%;
+  height:110px;
+  background:#111;
+  border:1px solid #333;
+  border-radius:8px;
+  color:#ccc;
+  font-size:11px;
+  font-family:monospace;
+  padding:10px;
+  resize:vertical;
+}
+.cookies-body button{
+  margin-top:8px;
+  padding:9px 18px;
+  border:none;
+  border-radius:8px;
+  background:#4a9eff;
+  color:white;
+  font-size:13px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.cookies-body button:disabled{ background:#333; color:#666; cursor:not-allowed; }
+.cookies-save-msg{ font-size:12px; margin-top:6px; }
+
+/* ── Card ── */
+.card{
+  background:#1a1a1a;
+  border-radius:14px;
+  margin-top:20px;
+  overflow:hidden;
+}
+.thumb-wrap{ width:100%; background:#000; position:relative; }
+.thumb-wrap img{ width:100%; display:block; max-height:300px; object-fit:cover; }
+.card-body{ padding:16px; }
+.title{ font-size:14px; line-height:1.5; color:#bbb; margin-bottom:14px; }
+
+.codec-info{
+  background:#111;
+  border:1px solid #2a2a2a;
+  border-radius:10px;
+  padding:11px 14px;
+  margin-bottom:14px;
+  font-size:12px;
+  color:#777;
+  line-height:1.9;
+}
+.codec-info strong{ color:#00cc66; display:block; margin-bottom:3px; font-size:13px; }
+
+.group-label{
+  font-size:11px;
+  color:#555;
+  text-transform:uppercase;
+  letter-spacing:0.6px;
+  margin:14px 0 7px;
+}
+
+.btn-dl{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  padding:13px 16px;
+  margin-bottom:8px;
+  border:none;
+  border-radius:10px;
+  color:white;
+  font-size:15px;
+  font-weight:bold;
+  cursor:pointer;
+  transition:opacity 0.15s;
+}
+.btn-dl:disabled{ opacity:0.5; cursor:not-allowed; }
+.btn-dl.h264{ background:#00aa55; }
+.btn-dl.prores{ background:#7b3ff2; }
+
+.badge{
+  font-size:11px;
+  font-weight:normal;
+  background:#ffffff22;
+  padding:2px 8px;
+  border-radius:5px;
+  white-space:nowrap;
+}
+
+/* ── Ready banner (re-download) ── */
+#ready-banner{
+  display:none;
+  margin-top:14px;
+  background:#0d2b1a;
+  border:1px solid #00aa5544;
+  border-radius:12px;
+  padding:14px 16px;
+}
+#ready-banner.show{ display:block; }
+.ready-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+.ready-label{
+  font-size:13px;
+  color:#00cc66;
+  font-weight:bold;
+}
+.ready-size{
+  font-size:12px;
+  color:#555;
+}
+.btn-redownload{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:#00aa55;
+  color:white;
+  font-size:15px;
+  font-weight:bold;
+  cursor:pointer;
+  transition:opacity 0.15s;
+}
+.btn-redownload:hover{ opacity:0.85; }
+.ready-hint{
+  margin-top:8px;
+  font-size:11px;
+  color:#3a6b4a;
+  text-align:center;
+}
+
+/* ── Progress modal ── */
+#modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#000000cc;
+  z-index:100;
+  align-items:center;
+  justify-content:center;
+  padding:30px;
+}
+#modal.show{ display:flex; }
+.modal-box{
+  background:#1e1e1e;
+  border-radius:16px;
+  padding:28px 24px;
+  width:100%;
+  max-width:360px;
+  text-align:center;
+}
+.modal-box h3{ font-size:17px; margin-bottom:8px; }
+.modal-box p{ font-size:13px; color:#888; margin-bottom:20px; }
+.progress-bar-bg{
+  background:#333;
+  border-radius:99px;
+  height:8px;
+  overflow:hidden;
+  margin-bottom:16px;
+}
+.progress-bar{
+  height:100%;
+  border-radius:99px;
+  width:0%;
+  transition:width 0.4s;
+}
+.progress-bar.h264{ background:#00aa55; }
+.progress-bar.prores{ background:#7b3ff2; }
+.progress-status{ font-size:13px; color:#aaa; margin-bottom:20px; }
+
+.modal-actions{ display:flex; gap:10px; justify-content:center; }
+#modal-cancel{
+  background:transparent;
+  border:1px solid #555;
+  color:#aaa;
+  padding:9px 20px;
+  border-radius:8px;
+  font-size:14px;
+  cursor:pointer;
+}
+#modal-redownload{
+  display:none;
+  background:#00aa55;
+  border:none;
+  color:white;
+  padding:9px 20px;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:bold;
+  cursor:pointer;
+}
+#modal-redownload.show{ display:block; }
+
+.msg{ margin-top:14px; color:#888; font-size:14px; }
+.erro{ margin-top:14px; color:#ff4444; font-size:14px; }
+</style>
+</head>
+<body>
+
+<h1>YouTube → After Effects</h1>
+<p class="sub">Converte para MP4 H264 ou ProRes otimizado para edição</p>
+
+<input id="url" placeholder="Cole o link do YouTube">
+<button id="btn" onclick="buscar()">Buscar Vídeo</button>
+
+<!-- Re-download banner: shown after file is ready, persists until new job -->
+<div id="ready-banner">
+  <div class="ready-top">
+    <span class="ready-label">✓ Arquivo pronto no servidor</span>
+    <span class="ready-size" id="ready-size"></span>
+  </div>
+  <button class="btn-redownload" onclick="triggerRedownload()">
+    ⬇ Baixar novamente
+  </button>
+  <p class="ready-hint">O arquivo fica disponível até você iniciar um novo download</p>
+</div>
+
+<div id="resultado"></div>
+
+<!-- Progress modal -->
+<div id="modal">
+  <div class="modal-box">
+    <h3 id="modal-title">Preparando download…</h3>
+    <p id="modal-desc">Isso pode levar alguns minutos</p>
+    <div class="progress-bar-bg">
+      <div class="progress-bar" id="modal-bar"></div>
+    </div>
+    <div class="progress-status" id="modal-status">Iniciando…</div>
+    <div class="modal-actions">
+      <button id="modal-cancel" onclick="cancelJob()">Cancelar</button>
+      <button id="modal-redownload" onclick="triggerRedownload()">⬇ Baixar novamente</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentJobId = null;
+let currentFilename = null;
+let currentLabel = null;
+let pollInterval = null;
+
+// Check cookies status on load
+window.addEventListener("load", async () => {
+  try {
+    const r = await fetch("/cookies-status");
+    const d = await r.json();
+    setCookiesTag(d.configured);
+  } catch(_) {}
+});
+
+function setCookiesTag(configured) {
+  const tag = document.getElementById("cookies-tag");
+  if (!tag) return;
+  if (configured) {
+    tag.textContent = "✓ Configurado";
+    tag.className = "tag ok";
+  } else {
+    tag.textContent = "Não configurado";
+    tag.className = "tag missing";
+  }
+}
+
+function toggleCookies() {
+  const body = document.getElementById("cookies-body");
+  if (body) body.classList.toggle("open");
+}
+
+async function saveCookies() {
+  const content = document.getElementById("cookies-input").value.trim();
+  const btn = document.getElementById("cookies-save-btn");
+  const msg = document.getElementById("cookies-save-msg");
+
+  if (!content || content.length < 50) {
+    msg.style.color = "#ff4444";
+    msg.textContent = "Cole o conteúdo completo do arquivo cookies.txt";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Salvando…";
+  msg.textContent = "";
+
+  try {
+    const r = await fetch("/cookies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      msg.style.color = "#00cc66";
+      msg.textContent = "✓ Cookies salvos com sucesso!";
+      setCookiesTag(true);
+      document.getElementById("cookies-input").value = "";
+      setTimeout(() => {
+        document.getElementById("cookies-body").classList.remove("open");
+      }, 1500);
+    } else {
+      msg.style.color = "#ff4444";
+      msg.textContent = d.error || "Erro ao salvar";
+    }
+  } catch(_) {
+    msg.style.color = "#ff4444";
+    msg.textContent = "Erro de conexão";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Salvar Cookies";
+  }
+}
+
+async function buscar(){
+  const url = document.getElementById("url").value.trim();
+  const resultado = document.getElementById("resultado");
+  const btn = document.getElementById("btn");
+
+  if(!url){ resultado.innerHTML='<p class="erro">Cole um link válido do YouTube.</p>'; return; }
+
+  btn.disabled = true;
+  btn.textContent = "Buscando...";
+  resultado.innerHTML = '<p class="msg">Carregando informações do vídeo…</p>';
+
+  try {
+    const req = await fetch("/video", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({url})
+    });
+    const data = await req.json();
+
+    if(data.error){ resultado.innerHTML=`<p class="erro">${data.error}</p>`; return; }
+    if(!data.qualities||data.qualities.length===0){
+      resultado.innerHTML=`<div class="card"><div class="card-body"><p class="title">${data.title}</p><p class="erro">Nenhuma qualidade disponível.</p></div></div>`;
+      return;
+    }
+
+    const h264 = data.qualities.filter(q=>q.codec==="h264");
+    const prores = data.qualities.filter(q=>q.codec==="prores");
+
+    let btns = "";
+    if(h264.length){
+      btns += '<div class="group-label">MP4 — H264 (leve, compatível)</div>';
+      h264.forEach(q=>{
+        btns += `<button class="btn-dl h264" onclick="startDownload('${encodeURIComponent(data.videoUrl)}','${q.height}','h264','${encodeURIComponent(q.filename)}','H264 ${q.height}p')">
+          <span>⬇ Baixar ${q.height}p MP4</span>
+          <span class="badge">H264 · CFR 30fps · AAC</span>
+        </button>`;
+      });
+    }
+    if(prores.length){
+      btns += '<div class="group-label">MOV — ProRes (profissional, arquivo maior)</div>';
+      prores.forEach(q=>{
+        btns += `<button class="btn-dl prores" onclick="startDownload('${encodeURIComponent(data.videoUrl)}','${q.height}','prores','${encodeURIComponent(q.filename)}','ProRes ${q.height}p')">
+          <span>⬇ Baixar ${q.height}p ProRes</span>
+          <span class="badge">ProRes 422 HQ · PCM</span>
+        </button>`;
+      });
+    }
+
+    const thumbHtml = data.thumbnail
+      ? `<div class="thumb-wrap"><img src="${data.thumbnail}" alt="thumbnail"></div>`
+      : "";
+
+    resultado.innerHTML = `
+      <div class="card">
+        ${thumbHtml}
+        <div class="card-body">
+          <p class="title">${data.title}</p>
+          <div class="codec-info">
+            <strong>Otimizado para Adobe After Effects</strong>
+            ✅ H264 / ProRes &nbsp;·&nbsp; ✅ CFR 30fps &nbsp;·&nbsp; ✅ yuv420p &nbsp;·&nbsp; ✅ AAC / PCM &nbsp;·&nbsp; ✅ GOP curto
+          </div>
+          ${btns}
+        </div>
+      </div>`;
+
+  } catch(e) {
+    resultado.innerHTML = '<p class="erro">Erro de conexão com o servidor.</p>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Buscar Vídeo";
+  }
+}
+
+async function startDownload(encUrl, height, codec, encFilename, label){
+  const url = decodeURIComponent(encUrl);
+  const filename = decodeURIComponent(encFilename);
+
+  // Hide any previous ready banner — new job will replace the old file
+  hideBanner();
+
+  currentFilename = filename;
+  currentLabel = label;
+
+  document.getElementById("modal-title").textContent = `Preparando ${label}…`;
+  document.getElementById("modal-desc").textContent = "Baixando e convertendo. Não feche esta página.";
+  document.getElementById("modal-bar").className = `progress-bar ${codec}`;
+  document.getElementById("modal-status").textContent = "Iniciando…";
+  document.getElementById("modal-bar").style.width = "0%";
+  document.getElementById("modal-redownload").classList.remove("show");
+  document.getElementById("modal").classList.add("show");
+
+  try {
+    const res = await fetch("/prepare", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ url, height, codec, filename })
+    });
+    const data = await res.json();
+    if(data.error){ showError(data.error); return; }
+
+    currentJobId = data.jobId;
+    startPolling();
+  } catch(e) {
+    showError("Erro ao iniciar o download.");
+  }
+}
+
+function startPolling(){
+  clearInterval(pollInterval);
+
+  pollInterval = setInterval(async () => {
+    if(!currentJobId) return;
+    try {
+      const res = await fetch(`/status?id=${currentJobId}`);
+      const data = await res.json();
+
+      if(data.progress > 0) setBar(data.progress);
+      document.getElementById("modal-status").textContent = data.message || "Processando…";
+
+      if(data.status === "ready"){
+        clearInterval(pollInterval);
+        setBar(100);
+        document.getElementById("modal-status").textContent = "✓ Pronto! Iniciando download…";
+
+        // Show "download again" button inside modal
+        document.getElementById("modal-redownload").classList.add("show");
+        document.getElementById("modal-cancel").textContent = "Fechar";
+
+        // Show persistent ready banner
+        showBanner(data.sizeMB);
+
+        // Trigger download automatically
+        setTimeout(() => triggerRedownload(), 500);
+
+      } else if(data.status === "error"){
+        clearInterval(pollInterval);
+        showError(data.message || "Erro desconhecido.");
+      }
+    } catch(e) {}
+  }, 2000);
+}
+
+function triggerRedownload(){
+  if(!currentJobId || !currentFilename) return;
+  const a = document.createElement("a");
+  a.href = `/file?id=${currentJobId}`;
+  a.download = currentFilename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function showBanner(sizeMB){
+  const banner = document.getElementById("ready-banner");
+  const sizeEl = document.getElementById("ready-size");
+  if(sizeMB) sizeEl.textContent = sizeMB + " MB";
+  else sizeEl.textContent = "";
+  banner.classList.add("show");
+}
+
+function hideBanner(){
+  document.getElementById("ready-banner").classList.remove("show");
+}
+
+function setBar(pct){
+  document.getElementById("modal-bar").style.width = pct + "%";
+}
+
+function showError(msg){
+  closeModal();
+  document.getElementById("resultado").insertAdjacentHTML("afterbegin", `<p class="erro">${msg}</p>`);
+}
+
+function cancelJob(){
+  currentJobId = null;
+  clearInterval(pollInterval);
+  closeModal();
+}
+
+function closeModal(){
+  document.getElementById("modal").classList.remove("show");
+  document.getElementById("modal-cancel").textContent = "Cancelar";
+  // Note: currentJobId is kept so banner re-download still works
+}
+
+document.getElementById("url").addEventListener("keydown", e => {
+  if(e.key==="Enter") buscar();
+});
+</script>
+</body>
+</html>
